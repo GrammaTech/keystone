@@ -200,7 +200,7 @@ Like glibc's errno, ks_errno might not retain its old error once accessed.
 Refer to ks_err enum for detailed error."
   (engine ks-engine)
   (type ks-opt-type)
-  (value size-t))
+  (value ks-opt-value))
 
 (defcfun "ks_asm" ks-error
   "Assemble a string given its the buffer, size, start address and number
