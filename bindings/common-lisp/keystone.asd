@@ -25,25 +25,12 @@
     :components ((:file "package")
                  (:cffi-grovel-file "grovel")
                  (:file "keystone"))
-    :in-order-to ((test-op (test-op "keystone/test"))))
-
-(defsystem "keystone/test"
-  :author "GrammaTech"
-  :licence "MIT"
-  :description "Test the KEYSTONE package."
-  :perform
-  (test-op (o c) (symbol-call :keystone/test '#:test)))
+    :in-order-to ((test-op (load-op "keystone/test")))
+    :perform (test-op (o c) (symbol-call :keystone/test '#:test)))
 
 (defsystem "keystone/clos"
   :author "GrammaTech"
   :licence "MIT"
   :description "Common Lisp CLOS interface to the Keystone assembler"
-  :perform
-  (test-op (o c) (symbol-call :keystone/clos-test '#:test)))
-
-(defsystem "keystone/clos-test"
-  :author "GrammaTech"
-  :licence "MIT"
-  :description "Test the KEYSTONE/CLOS package."
-  :perform
-  (test-op (o c) (symbol-call :keystone/clos-test '#:test)))
+  :in-order-to ((test-op (load-op "keystone/clos-test")))
+  :perform (test-op (o c) (symbol-call :keystone/clos-test '#:test)))
