@@ -13,6 +13,8 @@
 (defpackage :keystone/clos
   (:use :gt :cffi :keystone)
   (:export :version
+           :keystone
+           :assembly
            ;; KEYSTONE-ENGINE class and accessors
            :keystone-engine
            :architecture
@@ -30,6 +32,20 @@
          (major (ash encoded-version -8)))
     (values major (- encoded-version (ash major 8)))))
 
+(define-condition keystone (error)
+  ((code :initarg :code :initform nil :reader code)
+   (strerr :initarg :strerr :initform nil :reader strerr))
+  (:report (lambda (condition stream)
+             (format stream "Keystone error ~S." (strerr condition))))
+  (:documentation "Keystone error."))
+
+(define-condition assembly (keystone)
+  ((instructions :initarg :instructions :initform nil :reader instructions))
+  (:report (lambda (condition stream)
+             (format stream "Assembly error ~S on ~S."
+                     (strerr condition) (bytes condition))))
+  (:documentation "Keystone assembly error."))
+
 (defclass keystone-engine ()
   ((architecture :initarg :architecture :reader architecture :type keyword
                  :initform (required-argument :architecture))
@@ -40,10 +56,11 @@
 (defmethod initialize-instance :after ((engine keystone-engine) &key)
   (with-slots (architecture mode handle) engine
     (setf handle (foreign-alloc 'ks-engine))
-    (assert (eql :ok (ks-open architecture mode handle))
-            (architecture mode)
-            "Keystone Engine initialization with `ks-open' failed with ~S."
-            (ks-strerror (ks-errno handle))))
+    (let ((errno (ks-open architecture mode handle)))
+      (unless (eql :ok errno)
+        (error (make-condition 'keystone
+                               :code errno
+                               :strerr (ks-strerror errno))))))
   #+sbcl (sb-impl::finalize engine
                             (lambda ()
                               (with-slots (handle) engine
@@ -72,14 +89,16 @@ values.")
      (with-foreign-object (encode '(:pointer :unsigned-char)))
      (with-foreign-object (size 'size-t))
      (with-foreign-object (count 'size-t)
-       (assert (eql :ok (ks-asm (mem-ref handle 'ks-engine)
+       (unless (eql :ok (ks-asm (mem-ref handle 'ks-engine)
                                 code
                                 (or address 0)
                                 encode
                                 size
                                 count))
-               (handle code)
-               "Assembly failed with ~S." (ks-strerror (ks-errno handle)))
+         (error (make-condition 'assembly
+                                :instructions code
+                                :code (ks-errno handle)
+                                :strerr (ks-strerror (ks-errno handle)))))
        (unwind-protect
             (let* ((cl-size (mem-ref size 'size-t))
                    (out (make-array cl-size :element-type '(unsigned-byte 8))))
