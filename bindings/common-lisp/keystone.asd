@@ -32,5 +32,6 @@
   :author "GrammaTech"
   :licence "MIT"
   :description "Common Lisp CLOS interface to the Keystone assembler"
+  :depends-on (:keystone)
   :in-order-to ((test-op (load-op "keystone/clos-test")))
   :perform (test-op (o c) (symbol-call :keystone/clos-test '#:test)))
