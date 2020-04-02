@@ -1,4 +1,4 @@
-;;;; test.lisp --- Tests for CFFI bindings to libkeystone.so
+;;;; test.lisp --- Tests for CLOS interface to the Keystone assembler
 ;;;;
 ;;;; Copyright (C) 2020 GrammaTech, Inc.
 ;;;;
@@ -11,42 +11,18 @@
 ;;;; not necessarily reflect the position or policy of the Government
 ;;;; and no official endorsement should be inferred.
 (defpackage :keystone/test
-  (:use :common-lisp :cffi :keystone :stefil)
-  (:import-from :uiop :nest)
+  (:use :gt :cffi :keystone/raw :keystone :stefil)
   (:export :test))
 (in-package :keystone/test)
+(in-readtable :curry-compose-reader-macros)
 
 (defsuite test)
 (in-suite test)
 
-(deftest ks-asm-original-example ()
-  (nest
-   (let ((arch :x86) (mode :32)
-         (code "INC ecx; DEC edx")))
-   (is)
-   (string= #.(format nil "\"INC ecx; DEC edx\" = 41 4A ~%~
-                             Compiled: 2 bytes, statements: 2~%"))
-   (with-output-to-string (*standard-output*))
-   (with-foreign-object (engine 'ks-engine))
-   (with-foreign-object (encode '(:pointer :unsigned-char)))
-   (with-foreign-object (size 'size-t))
-   (with-foreign-object (count 'size-t)
-     (assert (eql :ok (ks-open arch mode engine)) (engine)
-             "Failed to open Keystone engine. ~a" (ks-errno engine))
-     (assert (eql :ok (ks-asm (mem-ref engine 'ks-engine)
-                              code
-                              0
-                              encode
-                              size
-                              count))
-             (engine code)
-             "Failed to disassemble given code. ~s"
-             (ks-strerror (ks-errno engine)))
-     (format t "~S = " code)
-     (dotimes (n (mem-ref size 'size-t))
-       (format t "~x " (mem-aref (mem-ref encode :pointer) :unsigned-char n)))
-     (format t "~%Compiled: ~d bytes, statements: ~a~%"
-             (mem-ref size 'size-t)
-             (mem-ref count 'size-t))
-     (ks-free (mem-ref encode :pointer))
-     (mem-ref engine 'ks-engine))))
+(deftest version-returns-two-numbers ()
+  (is (multiple-value-call [{every #'numberp} #'list] (version))))
+
+(deftest simple-asm ()
+  (is (equalp #(#x41 #x4A)
+              (asm (make-instance 'keystone-engine :architecture :x86 :mode :32)
+                   "INC ecx; DEC edx"))))

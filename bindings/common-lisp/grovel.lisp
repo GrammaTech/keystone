@@ -12,6 +12,6 @@
 ;;;; and no official endorsement should be inferred.
 (include "stdlib.h" "keystone/keystone.h")
 
-(in-package :keystone)
+(in-package :keystone/raw)
 
 (ctype size-t "size_t")

@@ -15,23 +15,35 @@
 (use-package 'cffi-grovel)
 
 (defsystem "keystone"
+  :author "GrammaTech"
+  :licence "MIT"
+  :description "Common Lisp CLOS interface to the Keystone assembler"
+  :depends-on (:gt :cffi :static-vectors :keystone/raw)
+  :components ((:file "keystone"))
+  :in-order-to ((test-op (load-op "keystone/test")))
+  :perform (test-op (o c) (symbol-call :keystone/test '#:test)))
+
+(defsystem "keystone/test"
+  :author "GrammaTech"
+  :licence "MIT"
+  :depends-on (:gt :cffi :keystone/raw :keystone :stefil)
+  :components ((:file "test")))
+
+(defsystem "keystone/raw"
     :name "keystone"
     :author "GrammaTech"
     :licence "MIT"
     :description "Raw Common Lisp FFI interface to the Keystone assembler"
     :depends-on (:gt :cffi :static-vectors)
-    :class :package-inferred-system
-    :defsystem-depends-on (:asdf-package-system :cffi-grovel)
+    :defsystem-depends-on (:cffi-grovel)
     :components ((:file "package")
                  (:cffi-grovel-file "grovel")
-                 (:file "keystone"))
-    :in-order-to ((test-op (load-op "keystone/test")))
-    :perform (test-op (o c) (symbol-call :keystone/test '#:test)))
+                 (:file "raw"))
+    :in-order-to ((test-op (load-op "keystone/raw-test")))
+    :perform (test-op (o c) (symbol-call :keystone/raw-test '#:test)))
 
-(defsystem "keystone/clos"
+(defsystem "keystone/raw-test"
   :author "GrammaTech"
   :licence "MIT"
-  :description "Common Lisp CLOS interface to the Keystone assembler"
-  :depends-on (:keystone)
-  :in-order-to ((test-op (load-op "keystone/clos-test")))
-  :perform (test-op (o c) (symbol-call :keystone/clos-test '#:test)))
+  :depends-on (:gt :cffi :static-vectors :keystone/raw :stefil)
+  :components ((:file "raw-test")))
