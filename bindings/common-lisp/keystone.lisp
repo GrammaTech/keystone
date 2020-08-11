@@ -56,19 +56,20 @@
 (defmethod initialize-instance :after ((engine keystone-engine) &key)
   (with-slots (architecture mode handle) engine
     (setf handle (foreign-alloc 'ks-engine))
-    (when (consp mode)
-      (setf mode (reduce #'logior mode
-                         :key {foreign-enum-value 'ks-mode}
-                         :initial-value 0)))
-    (let ((errno (ks-open architecture mode handle)))
-      (unless (eql :ok errno)
-        (error (make-condition 'keystone
-                               :code errno
-                               :strerr (ks-strerror errno))))))
-  #+sbcl (sb-impl::finalize engine
-                            (lambda ()
-                              (with-slots (handle) engine
-                                (ks-close handle)))))
+    (let ((actual-mode (if (listp mode)
+                           (reduce #'logior mode
+                                   :key {foreign-enum-value 'ks-mode}
+                                   :initial-value 0)
+                           mode)))
+      (let ((errno (ks-open architecture actual-mode handle)))
+        (unless (eql :ok errno)
+          (error (make-condition 'keystone
+                                 :code errno
+                                 :strerr (ks-strerror errno))))))
+    #+sbcl (sb-impl::finalize engine
+                              (lambda ()
+                                (with-slots (handle) engine
+                                  (ks-close handle))))))
 
 (defmethod print-object ((obj keystone-engine) stream)
   (print-unreadable-object (obj stream :type t :identity t)
