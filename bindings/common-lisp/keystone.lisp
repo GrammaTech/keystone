@@ -56,6 +56,10 @@
 (defmethod initialize-instance :after ((engine keystone-engine) &key)
   (with-slots (architecture mode handle) engine
     (setf handle (foreign-alloc 'ks-engine))
+    (when (consp mode)
+      (setf mode (reduce #'logior mode
+                         :key {foreign-enum-value 'ks-mode}
+                         :initial-value 0)))
     (let ((errno (ks-open architecture mode handle)))
       (unless (eql :ok errno)
         (error (make-condition 'keystone
