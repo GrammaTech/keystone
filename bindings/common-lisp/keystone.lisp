@@ -56,16 +56,16 @@
 (defmethod initialize-instance :after ((engine keystone-engine) &key)
   (with-slots (architecture mode handle) engine
     (setf handle (foreign-alloc 'ks-engine))
-    (let ((actual-mode (if (listp mode)
+    (let* ((actual-mode (if (listp mode)
                            (reduce #'logior mode
                                    :key {foreign-enum-value 'ks-mode}
                                    :initial-value 0)
-                           mode)))
-      (let ((errno (ks-open architecture actual-mode handle)))
-        (unless (eql :ok errno)
-          (error (make-condition 'keystone
-                                 :code errno
-                                 :strerr (ks-strerror errno))))))
+                           mode))
+           (errno (ks-open architecture actual-mode handle)))
+      (unless (eql :ok errno)
+        (error (make-condition 'keystone
+                               :code errno
+                               :strerr (ks-strerror errno)))))
     #+sbcl (sb-impl::finalize engine
                               (lambda ()
                                 (with-slots (handle) engine
