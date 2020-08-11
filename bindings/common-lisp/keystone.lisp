@@ -49,7 +49,7 @@
 (defclass keystone-engine ()
   ((architecture :initarg :architecture :reader architecture :type keyword
                  :initform (required-argument :architecture))
-   (mode :initarg :mode :reader mode :type keyword
+   (mode :initarg :mode :reader mode :type (or keyword list)
          :initform (required-argument :mode))
    (handle)))
 
